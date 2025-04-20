@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scanner Input Logger</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #1e1e2f;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+    h1 {
+      margin-bottom: 1rem;
+    }
+    #log {
+      width: 80%;
+      max-width: 800px;
+      background-color: #2d2d44;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      overflow-y: auto;
+      height: 300px;
+      margin-top: 1rem;
+    }
+    .log-entry {
+      padding: 0.5rem;
+      border-bottom: 1px solid #444;
+    }
+  </style>
+</head>
+<body>
+  <h1>Scanner Input Logger</h1>
+  <p>Scan a code between <code>#</code> and <code>CR</code>.</p>
+  <div id="log"></div>
+
+  <script>
+    let buffer = "";
+    let capturing = false;
+
+    document.addEventListener("keydown", function (e) {
+      const char = e.key;
+
+      if (char === "#") {
+        capturing = true;
+        buffer = "";
+        return;
+      }
+
+      if (!capturing) return;
+
+      if (char === "Enter") {
+        logInput(buffer);
+        buffer = "";
+        capturing = false;
+        return;
+      }
+
+      if (char.length === 1) {
+        buffer += char;
+      }
+    });
+
+    function logInput(input) {
+      const log = document.getElementById("log");
+      const entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.textContent = input;
+      log.appendChild(entry);
+      log.scrollTop = log.scrollHeight;
+    }
+  </script>
+</body>
+</html>
+
