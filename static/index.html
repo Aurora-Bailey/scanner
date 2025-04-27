@@ -14,6 +14,14 @@
   <link rel="apple-touch-icon" href="icons/icon-192x192.png">
 
   <style>
+     html, body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      overflow: hidden;
+      height: 100%;
+      width: 100%;
+    }
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: #1e1e2f;
@@ -21,10 +29,15 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 2rem;
     }
     h1 {
-      margin-bottom: 1rem;
+      color: red;
+    }
+    video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 200px;
     }
     #log {
       width: 80%;
@@ -46,7 +59,7 @@
 <body>
   <h1>Scanner Input</h1>
   <div id="log"></div>
-
+  <video id="camera" autoplay playsinline></video>
   <script>
     let buffer = "";
     let capturing = false;
@@ -82,6 +95,22 @@
       log.appendChild(entry);
       log.scrollTop = log.scrollHeight;
     }
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" }
+          },
+          audio: false
+        });
+        document.getElementById('camera').srcObject = stream;
+      } catch (err) {
+        console.error("Error accessing camera:", err);
+        alert("Camera access denied or unavailable.");
+      }
+    }
+
+    startCamera();
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./service-worker.js')
