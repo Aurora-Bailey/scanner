@@ -1,128 +1,92 @@
 <script lang="ts">
-	import { page } from '$app/state';
+	import { page } from '$app/stores';
 	import { base } from '$app/paths';
+	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+
+	let menuOpen = false;
+	let prevScroll = 0;
+	let visible = true;
+	let search = '';
+	let selected = 0;
+
+	let fruits = [
+		'Apple', 'Apricot', 'Avocado', 'Banana', 'Blackberry', 'Blueberry', 'Cherry', 'Coconut', 'Cranberry', 'Date',
+		'Dragonfruit', 'Durian', 'Fig', 'Grape', 'Guava', 'Kiwi', 'Lemon', 'Lime', 'Lychee', 'Mango',
+		'Melon', 'Nectarine', 'Orange', 'Papaya', 'Peach', 'Pear', 'Pineapple', 'Plum', 'Pomegranate', 'Raspberry',
+		'Strawberry', 'Tangerine', 'Tomato', 'Watermelon', 'Starfruit', 'Jackfruit', 'Cantaloupe', 'Passionfruit', 'Elderberry', 'Boysenberry',
+		'Persimmon', 'Quince', 'Mulberry', 'Currant', 'Salak', 'Longan', 'Soursop', 'Yuzu', 'Kumquat', 'Sapodilla'
+	];
+
+	onMount(() => {
+		window.addEventListener('scroll', () => {
+			const current = window.scrollY;
+			visible = current < prevScroll || current < 10;
+			prevScroll = current;
+		});
+	});
+
+	$: filtered = fruits.filter(f => f.toLowerCase().includes(search.toLowerCase()));
+	$: if (selected >= filtered.length) selected = 0;
+
+	function handleKey(e: KeyboardEvent) {
+		if (e.key === 'ArrowDown') {
+			selected = (selected + 1) % filtered.length;
+		}
+		if (e.key === 'ArrowUp') {
+			selected = (selected - 1 + filtered.length) % filtered.length;
+		}
+		if (e.key === 'Enter' && filtered.length > 0) {
+			goto(`${base}/${filtered[selected].toLowerCase()}`);
+			search = '';
+			selected = 0;
+		}
+	}
 </script>
 
-<header>
-	<div class="corner">
-		<a href="{base}/">
-			<img src="{base}/icons/icon-192x192.png" alt="Home" />
-		</a>
-	</div>
-
-	<nav>
-		<svg viewBox="0 0 2 3" aria-hidden="true">
-			<path d="M0,0 L1,2 C1.5,3 1.5,3 2,3 L2,0 Z" />
-		</svg>
-		<ul>
-			<li aria-current={page.url.pathname === '${base}/' ? 'page' : undefined}>
-				<a href="{base}/">Home</a>
+<header class={`fixed bottom-0 left-0 right-0 opacity-90 bg-zinc-950 text-cyan-400 pb-5 transition-transform duration-300 ${visible ? 'translate-y-0' : 'translate-y-full'} z-50`}>
+	
+	<!-- Search or Menu -->
+	{#if search.length > 0}
+	<nav class="bg-zinc-900 overflow-hidden">
+		<ul class="flex flex-col divide-y divide-cyan-800 max-h-[50vh] overflow-y-auto">
+			{#each filtered as fruit, i}
+			<li>
+				<a 
+					href="{base}/{fruit.toLowerCase()}" 
+					on:click={() => (search = '', selected = 0)}
+					class="block p-4 transition-colors duration-200 cursor-pointer {selected === i ? 'bg-cyan-800/20' : 'hover:bg-cyan-800/20'}"
+				>
+					{fruit}
+				</a>
 			</li>
-			<li aria-current={page.url.pathname === '${base}/about' ? 'page' : undefined}>
-				<a href="{base}/about">About</a>
-			</li>
-			<li aria-current={page.url.pathname.startsWith('${base}/sverdle') ? 'page' : undefined}>
-				<a href="{base}/sverdle">Sverdle</a>
-			</li>
+			{/each}
 		</ul>
-		<svg viewBox="0 0 2 3" aria-hidden="true">
-			<path d="M0,0 L0,3 C0.5,3 0.5,3 1,2 L2,0 Z" />
-		</svg>
 	</nav>
+	{:else}
+	<nav class={`overflow-hidden bg-zinc-900 transition-all duration-300 ${menuOpen ? 'max-h-60 opacity-100' : 'max-h-0 opacity-0'}`}>
+		<ul class="flex flex-col divide-y divide-cyan-800">
+			<li><a href="{base}/" on:click={() => menuOpen = false} class="block p-4 hover:bg-cyan-800/20" aria-current={$page.url.pathname === `${base}/` ? 'page' : undefined}>Home</a></li>
+			<li><a href="{base}/about" on:click={() => menuOpen = false} class="block p-4 hover:bg-cyan-800/20" aria-current={$page.url.pathname === `${base}/about` ? 'page' : undefined}>About</a></li>
+			<li><a href="{base}/sverdle" on:click={() => menuOpen = false} class="block p-4 hover:bg-cyan-800/20" aria-current={$page.url.pathname.startsWith(`${base}/sverdle`) ? 'page' : undefined}>Sverdle</a></li>
+		</ul>
+	</nav>
+	{/if}
 
-	<div class="corner">
-		<a href="{base}/">
-			<img src="" alt="action_button" />
-		</a>
+	<!-- Bottom Bar -->
+	<div class="flex items-center justify-between p-3 bg-zinc-950">
+		<input
+			type="text"
+			bind:value={search}
+			on:keydown={handleKey}
+			placeholder="Search fruits..."
+			class="flex-1 mx-4 px-3 py-1 rounded bg-zinc-800 text-cyan-200 placeholder-cyan-500 border border-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-sm"
+		/>
+
+		<button on:click={() => (menuOpen = !menuOpen)} aria-label="Toggle menu" class="relative w-8 h-8 flex flex-col justify-center items-center space-y-1.5">
+			<span class="w-6 h-0.5 bg-cyan-400 transition-all duration-300" class:rotate-45={menuOpen} class:translate-y-1.5={menuOpen}></span>
+			<span class="w-6 h-0.5 bg-cyan-400 transition-all duration-300" class:opacity-0={menuOpen}></span>
+			<span class="w-6 h-0.5 bg-cyan-400 transition-all duration-300" class:-rotate-45={menuOpen} class:-translate-y-1.5={menuOpen}></span>
+		</button>	
 	</div>
 </header>
-
-<style>
-	header {
-		display: flex;
-		justify-content: space-between;
-	}
-
-	.corner {
-		width: 3em;
-		height: 3em;
-	}
-
-	.corner a {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 100%;
-		height: 100%;
-	}
-
-	.corner img {
-		width: 2em;
-		height: 2em;
-		object-fit: contain;
-	}
-
-	nav {
-		display: flex;
-		justify-content: center;
-		--background: rgba(255, 255, 255, 0.7);
-	}
-
-	svg {
-		width: 2em;
-		height: 3em;
-		display: block;
-	}
-
-	path {
-		fill: var(--background);
-	}
-
-	ul {
-		position: relative;
-		padding: 0;
-		margin: 0;
-		height: 3em;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		list-style: none;
-		background: var(--background);
-		background-size: contain;
-	}
-
-	li {
-		position: relative;
-		height: 100%;
-	}
-
-	li[aria-current='page']::before {
-		--size: 6px;
-		content: '';
-		width: 0;
-		height: 0;
-		position: absolute;
-		top: 0;
-		left: calc(50% - var(--size));
-		border: var(--size) solid transparent;
-		border-top: var(--size) solid var(--color-theme-1);
-	}
-
-	nav a {
-		display: flex;
-		height: 100%;
-		align-items: center;
-		padding: 0 0.5rem;
-		color: var(--color-text);
-		font-weight: 700;
-		font-size: 0.8rem;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		text-decoration: none;
-		transition: color 0.2s linear;
-	}
-
-	a:hover {
-		color: var(--color-theme-1);
-	}
-</style>
