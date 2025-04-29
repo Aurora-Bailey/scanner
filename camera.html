@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Camera</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1e1e2f">
+
+  <!-- iOS support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Scanner">
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      overflow: hidden;
+      height: 100%;
+      width: 100%;
+    }
+
+    video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+  <video id="camera" autoplay playsinline></video>
+
+  <script>
+    let buffer = "";
+    let capturing = false;
+
+    document.addEventListener("keydown", function (e) {
+      const char = e.key;
+
+      if (char === "#") {
+        capturing = true;
+        buffer = "";
+        return;
+      }
+
+      if (!capturing) return;
+
+      if (char === "Enter") {
+        logInput(buffer);
+        buffer = "";
+        capturing = false;
+        return;
+      }
+
+      if (char.length === 1) {
+        buffer += char;
+      }
+    });
+
+    function logInput(input) {
+      const log = document.getElementById("log");
+      const entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.textContent = input;
+      log.appendChild(entry);
+      log.scrollTop = log.scrollHeight;
+    }
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" }
+          },
+          audio: false
+        });
+        document.getElementById('camera').srcObject = stream;
+      } catch (err) {
+        console.error("Error accessing camera:", err);
+        alert("Camera access denied or unavailable.");
+      }
+    }
+
+    startCamera();
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+          .then(reg => console.log('Service Worker registered:', reg))
+          .catch(err => console.error('Service Worker failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Scanner Input Logger</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #1e1e2f, #1a1b2e);
+      color: #f0f0f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .window {
+      width: 90%;
+      max-width: 800px;
+      background: rgba(45, 45, 68, 0.8);
+      border-radius: 16px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .titlebar {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      height: 2rem;
+      padding: 0.5rem;
+      background: rgba(0, 0, 0, 0.15);
+    }
+
+    .titlebar .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+    }
+
+    .dot.red { background: #ff5f56; }
+    .dot.yellow { background: #ffbd2e; }
+    .dot.green { background: #27c93f; }
+
+    .app-content {
+      padding: 2rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      margin-bottom: 1rem;
+      color: #ccc;
+    }
+
+    code {
+      background: #333951;
+      padding: 0.2rem 0.4rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      color: #ff79c6;
+    }
+
+    #log {
+      flex-grow: 1;
+      background-color: rgba(24, 24, 38, 0.6);
+      border-radius: 12px;
+      padding: 1rem;
+      overflow-y: auto;
+      height: 300px;
+      scrollbar-width: thin;
+      scrollbar-color: #888 transparent;
+    }
+
+    #log::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #log::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+
+    .log-entry {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      transition: background 0.2s;
+    }
+
+    .log-entry:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="window">
+    <div class="titlebar">
+      <div class="dot red"></div>
+      <div class="dot yellow"></div>
+      <div class="dot green"></div>
+    </div>
+    <div class="app-content">
+      <h1>Scanner Input Logger</h1>
+      <p>Scan a code between <code>#</code> and <code>CR</code>.</p>
+      <div id="log"></div>
+    </div>
+  </div>
+
+  <script>
+    let buffer = "";
+    let capturing = false;
+
+    document.addEventListener("keydown", function (e) {
+      const char = e.key;
+
+      if (char === "#") {
+        capturing = true;
+        buffer = "";
+        return;
+      }
+
+      if (!capturing) return;
+
+      if (char === "Enter") {
+        logInput(buffer);
+        buffer = "";
+        capturing = false;
+        return;
+      }
+
+      if (char.length === 1) {
+        buffer += char;
+      }
+    });
+
+    function logInput(input) {
+      const log = document.getElementById("log");
+      const entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.textContent = input;
+      log.appendChild(entry);
+      log.scrollTop = log.scrollHeight;
+    }
+  </script>
+</body>
+</html>

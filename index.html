@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="/scanner/icons/icon-192x192.png" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+		<!-- SvelteKit -->
+		
+		<link rel="modulepreload" href="/scanner/internal/immutable/entry/start.C8AKl4FW.js">
+		<link rel="modulepreload" href="/scanner/internal/immutable/chunks/IsvSq77K.js">
+		<link rel="modulepreload" href="/scanner/internal/immutable/chunks/DvJFha1T.js">
+		<link rel="modulepreload" href="/scanner/internal/immutable/chunks/DVf8XgYv.js">
+		<link rel="modulepreload" href="/scanner/internal/immutable/entry/app.BoCBfFsu.js">
+		<link rel="modulepreload" href="/scanner/internal/immutable/chunks/DtPjCCHc.js">
+		<link rel="modulepreload" href="/scanner/internal/immutable/chunks/46OpmppY.js">
+		<link rel="modulepreload" href="/scanner/internal/immutable/chunks/DlvOV1e5.js">
+		<link rel="modulepreload" href="/scanner/internal/immutable/chunks/VIBHD4Hd.js">
+		<link rel="modulepreload" href="/scanner/internal/immutable/chunks/Dg4fSCzg.js">
+
+		<!-- PWA -->
+		<link rel="manifest" href="/scanner/manifest.json" />
+  		<meta name="theme-color" content="#1e1e2f">
+
+		<!-- iOS support -->
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<meta name="apple-mobile-web-app-title" content="Scanner" />
+		<link rel="apple-touch-icon" href="/scanner/icons/icon-192x192.png" />
+	</head>
+
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">
+			<script>
+				{
+					__sveltekit_1abl3ao = {
+						base: "/scanner",
+						assets: "/scanner"
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import("/scanner/internal/immutable/entry/start.C8AKl4FW.js"),
+						import("/scanner/internal/immutable/entry/app.BoCBfFsu.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element);
+					});
+				}
+			</script>
+		</div>
+
+		<script>
+			if ('serviceWorker' in navigator) {
+				window.addEventListener('load', () => {
+					navigator.serviceWorker.register('/scanner/service-worker.js')
+						.then(reg => console.log('Service Worker registered:', reg))
+						.catch(err => console.error('Service Worker registration failed:', err));
+				});
+			}
+		</script>
+	</body>
+</html>
