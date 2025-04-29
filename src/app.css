@@ -2,18 +2,21 @@
 @import '@fontsource/fira-mono';
 
 :root {
-	--font-body:
-		Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
-		'Open Sans', 'Helvetica Neue', sans-serif;
+	--font-body: 'Fira Mono', monospace;
 	--font-mono: 'Fira Mono', monospace;
-	--color-bg-0: rgb(202, 216, 228);
-	--color-bg-1: hsl(209, 36%, 86%);
-	--color-bg-2: hsl(224, 44%, 95%);
-	--color-theme-1: #ff3e00;
-	--color-theme-2: #4075a6;
-	--color-text: rgba(0, 0, 0, 0.7);
+	
+	--color-bg-0: #0b0c10; /* deep dark */
+	--color-bg-1: #0d1117; /* github dark background */
+	--color-bg-2: #161b22; /* even deeper */
+	
+	--color-theme-1: #66fcf1; /* neon cyan */
+	--color-theme-2: #45a29e; /* muted neon teal */
+	
+	--color-text: #c5c6c7; /* soft grey text */
+	
 	--column-width: 42rem;
 	--column-margin-top: 4rem;
+	
 	font-family: var(--font-body);
 	color: var(--color-text);
 }
@@ -25,8 +28,8 @@ body {
 	background-color: var(--color-bg-1);
 	background-size: 100vw 100vh;
 	background-image:
-		radial-gradient(50% 50% at 50% 50%, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0) 100%),
-		linear-gradient(180deg, var(--color-bg-0) 0%, var(--color-bg-1) 15%, var(--color-bg-2) 50%);
+		radial-gradient(50% 50% at 50% 50%, rgba(102, 252, 241, 0.1) 0%, rgba(13, 17, 23, 0.5) 100%),
+		linear-gradient(180deg, var(--color-bg-0) 0%, var(--color-bg-1) 25%, var(--color-bg-2) 100%);
 }
 
 h1,
@@ -42,28 +45,33 @@ p {
 a {
 	color: var(--color-theme-1);
 	text-decoration: none;
+	transition: color 0.3s ease;
 }
 
 a:hover {
+	color: var(--color-theme-2);
 	text-decoration: underline;
 }
 
 h1 {
 	font-size: 2rem;
 	text-align: center;
+	color: var(--color-theme-1);
+	text-shadow: 0 0 5px var(--color-theme-1);
 }
 
 h2 {
 	font-size: 1rem;
+	color: var(--color-theme-2);
 }
 
 pre {
 	font-size: 16px;
 	font-family: var(--font-mono);
-	background-color: rgba(255, 255, 255, 0.45);
-	border-radius: 3px;
-	box-shadow: 2px 2px 6px rgb(255 255 255 / 25%);
-	padding: 0.5em;
+	background-color: rgba(102, 252, 241, 0.1);
+	border-radius: 6px;
+	box-shadow: 0 0 10px rgba(102, 252, 241, 0.25);
+	padding: 1em;
 	overflow-x: auto;
 	color: var(--color-text);
 }
@@ -75,12 +83,26 @@ pre {
 	flex-direction: column;
 	justify-content: center;
 	margin: 0 auto;
+	padding: 1rem;
 }
 
 input,
 button {
 	font-size: inherit;
 	font-family: inherit;
+	background-color: var(--color-bg-2);
+	color: var(--color-text);
+	border: 1px solid var(--color-theme-1);
+	border-radius: 5px;
+	padding: 0.5rem 1rem;
+	transition: all 0.2s ease;
+}
+
+button:hover,
+input:hover {
+	background-color: var(--color-theme-1);
+	color: var(--color-bg-1);
+	cursor: pointer;
 }
 
 button:focus:not(:focus-visible) {
