@@ -22,11 +22,12 @@
 	];
 
 	onMount(() => {
-		window.addEventListener('scroll', () => {
-			const current = window.scrollY;
-			visible = current < prevScroll || current < 10;
-			prevScroll = current;
-		});
+		// disable hide on scroll
+		// window.addEventListener('scroll', () => {
+		// 	const current = window.scrollY;
+		// 	visible = current < prevScroll || current < 50;
+		// 	prevScroll = current;
+		// });
 
 		window.addEventListener('keydown', e => {
 			if (e.key === 'Escape') {
