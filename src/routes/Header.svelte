@@ -5,7 +5,7 @@
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 
-
+	let version = "V1.01 - 042925";
 	let menuOpen = false;
 	let prevScroll = 0;
 	let visible = true;
@@ -22,12 +22,11 @@
 	];
 
 	onMount(() => {
-		// disable hide on scroll
-		// window.addEventListener('scroll', () => {
-		// 	const current = window.scrollY;
-		// 	visible = current < prevScroll || current < 50;
-		// 	prevScroll = current;
-		// });
+		window.addEventListener('scroll', () => {
+			const current = window.scrollY;
+			visible = current < prevScroll || current < 10;
+			prevScroll = current;
+		});
 
 		window.addEventListener('keydown', e => {
 			if (e.key === 'Escape') {
@@ -39,7 +38,7 @@
 
 	$: filtered = pages.filter(f => f.toLowerCase().includes(search.toLowerCase()));
 	$: if (selected >= filtered.length) selected = 0;
-	$: if (browser) document.body.style.overflow = (menuOpen || search.length > 0) ? 'hidden' : 'auto';
+	// $: if (browser) document.body.style.overflow = (menuOpen || search.length > 0) ? 'hidden' : 'auto';
 
 	function handleKey(e: KeyboardEvent) {
 		if (e.key === 'ArrowDown') selected = (selected + 1) % filtered.length;
@@ -110,4 +109,5 @@
 			<span class="w-6 h-0.5 bg-cyan-400 transition-all duration-300" class:-rotate-45={menuOpen} class:-translate-y-1.5={menuOpen}></span>
 		</button>
 	</div>
+	{version}
 </header>
