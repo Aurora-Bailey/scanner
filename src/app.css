@@ -130,3 +130,6 @@ button:focus:not(:focus-visible) {
 	width: 1px;
 	white-space: nowrap;
 }
+.rounded-full {
+	border-radius: 200px;
+}

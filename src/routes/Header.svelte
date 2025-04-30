@@ -1,113 +1,159 @@
 <script lang="ts">
-	import { page } from '$app/stores';
 	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { browser } from '$app/environment';
 
-	let version = "V1.01 - 042925";
-	let menuOpen = false;
-	let prevScroll = 0;
-	let visible = true;
+	let version = "V1.02 - 043025";
+	let open = false;
+	let hamburger = false;
 	let search = '';
-	let selected = 0;
-	let inputRef: HTMLInputElement;
+	let select = 0;
 
-	let pages = [
-		'Apple', 'Apricot', 'Avocado', 'Banana', 'Blackberry', 'Blueberry', 'Cherry', 'Coconut', 'Cranberry', 'Date',
-		'Dragonfruit', 'Durian', 'Fig', 'Grape', 'Guava', 'Kiwi', 'Lemon', 'Lime', 'Lychee', 'Mango',
-		'Melon', 'Nectarine', 'Orange', 'Papaya', 'Peach', 'Pear', 'Pineapple', 'Plum', 'Pomegranate', 'Raspberry',
-		'Strawberry', 'Tangerine', 'Tomato', 'Watermelon', 'Starfruit', 'Jackfruit', 'Cantaloupe', 'Passionfruit', 'Elderberry', 'Boysenberry',
-		'Persimmon', 'Quince', 'Mulberry', 'Currant', 'Salak', 'Longan', 'Soursop', 'Yuzu', 'Kumquat', 'Sapodilla', 'About', 'Import'
+	let actions = [
+		// Type: 'code'
+		{ name: 'List errors', type: 'code',fav: false, ref:'ls -la', keywords: ['errors', 'list', 'code', 'ls', '-la'] },
+		{ name: 'Check disk space', type: 'code', fav: false, ref:'df -h', keywords: ['disk', 'space', 'usage', 'df', 'storage'] },
+		{ name: 'Show processes', type: 'code', fav: false, ref:'top', keywords: ['processes', 'cpu', 'usage', 'top', 'monitor'] },
+		{ name: 'Network config', type: 'code', fav: false, ref:'ifconfig', keywords: ['network', 'ip', 'interface', 'ethernet'] },
+		{ name: 'System info', type: 'code', fav: true, ref:'uname -a', keywords: ['system', 'kernel', 'version', 'uname'] },
+		{ name: 'Edit hosts file', type: 'code', fav: false, ref:'sudo nano /etc/hosts', keywords: ['edit', 'hosts', 'nano', 'dns', 'file'] },
+		{ name: 'Search logs', type: 'code', fav: false, ref:'grep "error" /var/log/syslog', keywords: ['logs', 'search', 'error', 'grep', 'syslog'] },
+		{ name: 'Update packages', type: 'code', fav: false, ref:'sudo apt update && sudo apt upgrade', keywords: ['update', 'packages', 'upgrade', 'apt', 'linux'] },
+		{ name: 'Check memory', type: 'code', fav: false, ref:'free -m', keywords: ['memory', 'ram', 'usage', 'free', 'megabytes'] },
+		{ name: 'Restart service', type: 'code', fav: false, ref:'sudo systemctl restart nginx', keywords: ['restart', 'service', 'nginx', 'systemctl'] },
+
+		// Type: 'link'
+		{ name: 'Apple', type: 'link', fav: true, ref:'/apple', keywords: ['apple', 'fruit', 'tree', 'seeds', 'red'] },
+		{ name: 'Banana', type: 'link', fav: false, ref:'/banana', keywords: ['banana', 'fruit', 'yellow', 'peel', 'tropical'] },
+		{ name: 'Cherry', type: 'link', fav: false, ref:'/cherry', keywords: ['cherry', 'fruit', 'red', 'pit', 'tree'] },
+		{ name: 'Date', type: 'link', fav: false, ref:'/date', keywords: ['date', 'fruit', 'sweet', 'desert', 'palm'] },
+		{ name: 'Elderberry', type: 'link', fav: false, ref:'/elderberry', keywords: ['elderberry', 'fruit', 'purple', 'immune', 'berry'] },
+		{ name: 'Fig', type: 'link', fav: false, ref:'/fig', keywords: ['fig', 'fruit', 'tree', 'sweet', 'seeds'] },
+		{ name: 'Grape', type: 'link', fav: true, ref:'/grape', keywords: ['grape', 'fruit', 'vine', 'stem', 'purple'] },
+		{ name: 'Honeydew', type: 'link', fav: false, ref:'/honeydew', keywords: ['honeydew', 'melon', 'fruit', 'green', 'sweet'] },
+		{ name: 'Kiwi', type: 'link', fav: false, ref:'/kiwi', keywords: ['kiwi', 'fruit', 'fuzzy', 'green', 'vitamin c'] },
+		{ name: 'About', type: 'link', fav: true, ref:'/about', keywords: ['about', 'page', 'other', 'admin', 'arst'] }
 	];
 
-	onMount(() => {
-		window.addEventListener('scroll', () => {
-			const current = window.scrollY;
-			visible = current < prevScroll || current < 10;
-			prevScroll = current;
-		});
-
-		window.addEventListener('keydown', e => {
-			if (e.key === 'Escape') {
-				visible = true;
-				inputRef?.focus();
-			}
-		});
+	$: act = actions.filter(f => {
+		if (hamburger) return f['fav'];
+		else return search.length > 0 && f['name'].toLowerCase().includes(search.toLowerCase())
 	});
 
-	$: filtered = pages.filter(f => f.toLowerCase().includes(search.toLowerCase()));
-	$: if (selected >= filtered.length) selected = 0;
-	// $: if (browser) document.body.style.overflow = (menuOpen || search.length > 0) ? 'hidden' : 'auto';
-
-	function handleKey(e: KeyboardEvent) {
-		if (e.key === 'ArrowDown') selected = (selected + 1) % filtered.length;
-		if (e.key === 'ArrowUp') selected = (selected - 1 + filtered.length) % filtered.length;
-		if (e.key === 'Enter' && filtered.length > 0 && search != '') {
-			goto(`${base}/${filtered[selected].toLowerCase()}`);
-			search = '';
-			selected = 0;
-		}
+	$: if (browser) {
+		document.body.style.overflow = open ? 'hidden' : 'auto';
 	}
 
+
+
+	onMount(() => {
+		const escListener = async (e: KeyboardEvent) => {
+			let k = e.key;
+			if (k === 'Escape') {
+				toggle()
+			}
+			if (hamburger && k >= '0' && k <= '9') {
+				e.preventDefault();
+				e.stopPropagation();
+				let ki = parseInt(k)
+				goto(`${base}${act[ki]['ref']}`);
+				closeAll();
+			}
+			if (open && k === 'ArrowDown' || k === 'ArrowUp') {
+				e.preventDefault();
+				e.stopPropagation();
+				if (k === 'ArrowDown') select++
+				else select--
+				if (select >= act.length) select = act.length - 1
+				if (select < 0) select = 0
+			}
+			if (open && k == 'Enter') {
+				e.preventDefault();
+				e.stopPropagation();
+				goto(`${base}${act[select]['ref']}`);
+				closeAll();
+			}
+		};
+
+		window.addEventListener('keydown', escListener);
+		return () => window.removeEventListener('keydown', escListener);
+	});
+
+
 	function closeAll() {
-		menuOpen = false;
+		open = false;
+		hamburger = false;
+		reset()
+	}
+	function reset() {
 		search = '';
+		select = 0;
+	}
+	async function toggle() {
+		reset()
+		open = !open;
+		await tick(); // 🔥 wait for DOM update
+		const t = document.getElementById('nav-search') as HTMLInputElement | null;
+		t?.focus();
 	}
 </script>
 
 <!-- FOG OVERLAY -->
-{#if menuOpen || search.length > 0}
-	<!-- A11y: avoid tabindex values above zero -->
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div on:click={closeAll} class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity"></div>
-{/if}
+<!-- A11y: avoid tabindex values above zero -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div on:click={closeAll} class="{open ? '' : 'hidden'} fixed top-0 left-0 right-0 bottom-0 inset-0 bg-black/50 backdrop-blur-sm z-40 overflow=auto transition-opacity">
+</div>
 
-<header class={`fixed bottom-0 left-0 right-0 opacity-90 bg-zinc-950 text-cyan-400 pb-5 transition-transform duration-300 z-50 ${visible ? 'translate-y-0' : 'translate-y-full'}`}>
-	<!-- Search or Menu -->
-	{#if search.length > 0}
-	<nav class="bg-zinc-900 overflow-hidden">
-		<ul class="flex flex-col divide-y divide-cyan-800 max-h-[50vh] overflow-y-auto">
-			{#each filtered as page, i}
-			<li>
-				<a 
-					href="{base}/{page.toLowerCase()}" 
-					on:click={() => (search = '', selected = 0)}
-					class="block p-4 transition-colors duration-200 cursor-pointer {selected === i ? 'bg-cyan-800/20' : 'hover:bg-cyan-800/20'}"
-				>
-					{page}
-				</a>
-			</li>
+<!-- Bottom Bar -->
+<header class="{open ? '' : 'hidden'} fixed bottom-0 left-0 right-0 bg-zinc-950 text-cyan-400 z-50">
+	<nav class="flex flex-col justify-end max-h-[80vh] overflow-hidden">
+		<!-- Scroll only this list -->
+		<ul class="divide-y divide-cyan-800 overflow-y-auto max-h-full">
+			{#each act as a, i}
+				<li>
+					<a 
+						href="{base}{a.ref}" 
+						on:click={closeAll}
+						class="block p-4 transition-colors duration-200 cursor-pointer {select === i ? 'bg-cyan-800/20' : 'hover:bg-cyan-800/20'}"
+					>
+						{hamburger ? '['+i+']': ''} {a.name}
+					</a>
+				</li>
 			{/each}
 		</ul>
 	</nav>
-	{:else}
-	<nav class={`overflow-hidden bg-zinc-900 transition-all duration-300 ${menuOpen ? 'max-h-60 opacity-100' : 'max-h-0 opacity-0'}`}>
-		<ul class="flex flex-col divide-y divide-cyan-800">
-			<li><a href="{base}/" on:click={closeAll} class="block p-4 hover:bg-cyan-800/20" aria-current={$page.url.pathname === `${base}/` ? 'page' : undefined}>Home</a></li>
-			<li><a href="{base}/about" on:click={closeAll} class="block p-4 hover:bg-cyan-800/20" aria-current={$page.url.pathname === `${base}/about` ? 'page' : undefined}>About</a></li>
-			<li><a href="{base}/sverdle" on:click={closeAll} class="block p-4 hover:bg-cyan-800/20" aria-current={$page.url.pathname.startsWith(`${base}/sverdle`) ? 'page' : undefined}>Sverdle</a></li>
-		</ul>
-	</nav>
-	{/if}
 
-	<!-- Bottom Bar -->
+	<!-- Bottom search bar -->
 	<div class="flex items-center justify-between p-3 bg-zinc-950">
 		<input
-			bind:this={inputRef}
+			id="nav-search"
 			type="text"
 			bind:value={search}
-			on:keydown={handleKey}
-			placeholder="Search pages..."
+			placeholder="Search..."
 			class="flex-1 mx-4 px-3 py-1 rounded bg-zinc-800 text-cyan-200 placeholder-cyan-500 border border-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-sm"
 		/>
 
-		<button on:click={() => (menuOpen = !menuOpen)} aria-label="Toggle menu" class="relative w-8 h-8 flex flex-col justify-center items-center space-y-1.5">
-			<span class="w-6 h-0.5 bg-cyan-400 transition-all duration-300" class:rotate-45={menuOpen} class:translate-y-1.5={menuOpen}></span>
-			<span class="w-6 h-0.5 bg-cyan-400 transition-all duration-300" class:opacity-0={menuOpen}></span>
-			<span class="w-6 h-0.5 bg-cyan-400 transition-all duration-300" class:-rotate-45={menuOpen} class:-translate-y-1.5={menuOpen}></span>
+		<button on:click={() => (hamburger = !hamburger)} aria-label="Toggle menu" class="relative w-8 h-8 flex flex-col justify-center items-center space-y-1.5">
+			<span class="w-6 h-0.5 bg-cyan-400 transition-all duration-300" class:rotate-45={hamburger} class:translate-y-1.5={hamburger}></span>
+			<span class="w-6 h-0.5 bg-cyan-400 transition-all duration-300" class:opacity-0={hamburger}></span>
+			<span class="w-6 h-0.5 bg-cyan-400 transition-all duration-300" class:-rotate-45={hamburger} class:-translate-y-1.5={hamburger}></span>
 		</button>
 	</div>
-	{version}
+	<div class="flex items-center justify-center">Version: {version} Select: {select}</div>
 </header>
+
+<!-- Floating Action Button (FAB) -->
+<button
+	on:click={toggle}
+	aria-label="Open Menu"
+	class="{!open ? '' : 'hidden'} fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-cyan-600 opacity-10 text-white shadow-md hover:shadow-xl transition-all duration-300 flex items-center justify-center backdrop-blur-md"
+>
+	<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+		<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+	</svg>
+</button>
+
+
+
