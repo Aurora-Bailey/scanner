@@ -37,8 +37,9 @@
 	];
 
 	$: act = actions.filter(f => {
-		if (hamburger) return f['fav'];
-		else return search.length > 0 && f['name'].toLowerCase().includes(search.toLowerCase())
+		if (search.length > 0) return f['name'].toLowerCase().includes(search.toLowerCase())
+		else if (hamburger) return f['fav'];
+
 	});
 
 	$: if (browser) {
