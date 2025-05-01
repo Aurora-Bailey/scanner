@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { scanner } from '$lib/stores/scanner';
 </script>
 
 <svelte:head>
@@ -9,6 +10,7 @@
 <section class="flex flex-col items-center justify-center p-10">
 	<h1>Hello World!</h1>
 	<h2>press escape...</h2>
+	<p>{$scanner}</p>
 </section>
 
 <style>

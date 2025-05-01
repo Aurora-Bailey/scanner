@@ -3,12 +3,15 @@
 	import { goto } from '$app/navigation';
 	import { onMount, tick } from 'svelte';
 	import { browser } from '$app/environment';
+	import { scanner } from '$lib/stores/scanner';
 
 	let version = "V1.02 - 043025";
 	let open = false;
 	let hamburger = false;
 	let search = '';
 	let select = 0;
+	let buffer = ''; // scanner input
+	let capturing = false; // scanner
 
 	let actions = [
 		// Type: 'code'
@@ -49,36 +52,46 @@
 
 
 	onMount(() => {
-		const escListener = async (e: KeyboardEvent) => {
+		const keyboardListener = async (e: KeyboardEvent) => {
 			let k = e.key;
-			if (k === 'Escape') {
-				toggle(false)
+
+			if (!capturing) {
+				if (k === 'Escape') toggle(false)
+				
+				if (hamburger && k >= '0' && k <= '9') {
+					e.preventDefault();
+					e.stopPropagation();
+					let ki = parseInt(k)
+					goto(`${base}${act[ki]['ref']}`);
+					closeAll();
+				}
+				if (open && k === 'ArrowDown' || k === 'ArrowUp') {
+					e.preventDefault();
+					e.stopPropagation();
+					if (k === 'ArrowDown') select++
+					else select--
+					if (select >= act.length) select = act.length - 1
+					if (select < 0) select = 0
+				}
+				if (open && k == 'Enter') {
+					goto(`${base}${act[select]['ref']}`);
+					closeAll();
+				}
 			}
-			if (hamburger && k >= '0' && k <= '9') {
-				e.preventDefault();
-				e.stopPropagation();
-				let ki = parseInt(k)
-				goto(`${base}${act[ki]['ref']}`);
-				closeAll();
+
+			// Capture with bluetooth scanner
+			if (capturing && k === 'Enter') {
+				scanner.set(buffer);
+				capturing = false;
+				buffer = '';
+				return;
 			}
-			if (open && k === 'ArrowDown' || k === 'ArrowUp') {
-				e.preventDefault();
-				e.stopPropagation();
-				if (k === 'ArrowDown') select++
-				else select--
-				if (select >= act.length) select = act.length - 1
-				if (select < 0) select = 0
-			}
-			if (open && k == 'Enter') {
-				e.preventDefault();
-				e.stopPropagation();
-				goto(`${base}${act[select]['ref']}`);
-				closeAll();
-			}
+			if (capturing && k.length === 1) buffer += k;
+			if (!capturing && k === '#') capturing = true;
 		};
 
-		window.addEventListener('keydown', escListener);
-		return () => window.removeEventListener('keydown', escListener);
+		window.addEventListener('keydown', keyboardListener);
+		return () => window.removeEventListener('keydown', keyboardListener);
 	});
 
 
@@ -146,7 +159,7 @@
 			<span class="w-6 h-0.5 bg-cyan-400 transition-all duration-300" class:-rotate-45={hamburger} class:-translate-y-1.5={hamburger}></span>
 		</button>
 	</div>
-	<div class="flex items-center justify-center">Version: {version} Select: {select}</div>
+	<div class="flex items-center justify-center">Version: {version}</div>
 </header>
 
 <!-- Floating Action Button (FAB) -->
@@ -159,6 +172,7 @@
 		<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
 	</svg>
 </button>
+<div class="{capturing ? '' : 'hidden'} fixed bottom-6 left-6 z-100">#{buffer}</div>
 
 
 
