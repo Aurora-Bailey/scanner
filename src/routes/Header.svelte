@@ -30,7 +30,7 @@
 		{ name: 'Date', type: 'link', fav: false, ref:'/date', keywords: ['date', 'fruit', 'sweet', 'desert', 'palm'] },
 		{ name: 'Elderberry', type: 'link', fav: false, ref:'/elderberry', keywords: ['elderberry', 'fruit', 'purple', 'immune', 'berry'] },
 		{ name: 'Fig', type: 'link', fav: false, ref:'/fig', keywords: ['fig', 'fruit', 'tree', 'sweet', 'seeds'] },
-		{ name: 'Grape', type: 'link', fav: true, ref:'/grape', keywords: ['grape', 'fruit', 'vine', 'stem', 'purple'] },
+		{ name: 'Sverdle', type: 'link', fav: true, ref:'/sverdle', keywords: ['grape', 'fruit', 'vine', 'stem', 'purple'] },
 		{ name: 'Home', type: 'link', fav: true, ref:'/', keywords: ['home', 'back', 'exit', 'reset', 'other'] },
 		{ name: 'Import', type: 'link', fav: true, ref:'/import', keywords: ['add', 'import', 'scan', 'camera', 'idk'] },
 		{ name: 'About', type: 'link', fav: true, ref:'/about', keywords: ['about', 'page', 'other', 'admin', 'arst'] }
@@ -51,7 +51,7 @@
 		const escListener = async (e: KeyboardEvent) => {
 			let k = e.key;
 			if (k === 'Escape') {
-				toggle()
+				toggle(false)
 			}
 			if (hamburger && k >= '0' && k <= '9') {
 				e.preventDefault();
@@ -89,13 +89,17 @@
 	function reset() {
 		search = '';
 		select = 0;
+		hamburger = false;
 	}
-	async function toggle() {
+	async function toggle(expand: boolean) {
 		reset()
 		open = !open;
 		await tick(); // 🔥 wait for DOM update
-		const t = document.getElementById('nav-search') as HTMLInputElement | null;
-		t?.focus();
+		if (expand) hamburger = true
+		else {
+			const t = document.getElementById('nav-search') as HTMLInputElement | null;
+			t?.focus();
+		}
 	}
 </script>
 
@@ -146,7 +150,7 @@
 
 <!-- Floating Action Button (FAB) -->
 <button
-	on:click={toggle}
+	on:click={()=>toggle(true)}
 	aria-label="Open Menu"
 	class="{!open ? '' : 'hidden'} fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-cyan-600 opacity-10 text-white shadow-md hover:shadow-xl transition-all duration-300 flex items-center justify-center backdrop-blur-md"
 >
