@@ -1,158 +1,74 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { scanner } from '$lib/stores/scanner';
 
-	let capturing = false;
-	let buffer = '';
-	let stream: MediaStream | null = null; // <-- Track the stream globally
-	let camera: HTMLVideoElement | null = null;
-	let hist: any[] = [];
+	let stream: MediaStream | null = null;
+	let camera: HTMLVideoElement;
+	let hist: { scan: string, image: string | null }[] = [];
 
-	function scannerListen(event: KeyboardEvent) {
-		const char = event.key;
-
-		if (char === '#') {
-			capturing = true;
-			buffer = '';
-			return;
-		}
-
-		if (!capturing) return;
-
-		if (char === 'Enter') {
-			hist = [...hist, {scan: buffer, image: captureImage()}]
-			setTimeout(()=> {
-				buffer = '';
-			}, 2000)
-			capturing = false;
-			return;
-		}
-
-		if (char.length === 1) {
-			buffer += char;
-		}
+	// $: $scanner && hist.push({ scan: $scanner, image: captureImage() });
+	$: if ($scanner) {
+		hist = [...hist, {scan: $scanner, image: captureImage()}]
 	}
 
-
-
-	async function startCamera() {
-		const stream = await navigator.mediaDevices.getUserMedia({
-			video: {
-				facingMode: { ideal: 'environment' },
-				width: { ideal: 720 },   // 💬 These belong INSIDE video
-				height: { ideal: 1280 }
-			},
+	const startCamera = async () => {
+		stream = await navigator.mediaDevices.getUserMedia({
+			video: { facingMode: 'environment', width: { ideal: 405 }, height: { ideal: 720 } },
 			audio: false
-		});
-		camera = document.getElementById('camera') as HTMLVideoElement;
-		camera.srcObject = stream;
+		}), camera.srcObject = stream;
 	}
 
-	function stopCamera() {
-		if (!stream) return false;
-		stream.getTracks().forEach(track => track.stop()); // 💥 Stop all video tracks
-		stream = null;
-		camera = null;
+	const stopCamera = () => {
+		stream?.getTracks().forEach(t => t.stop()), stream = null;
 	}
-	function captureImage(): string | null {
+
+	const captureImage = () => {
 		if (!camera) return null;
+		const c = document.createElement('canvas');
+		c.width = camera.videoWidth;
+		c.height = camera.videoHeight;
+		const ctx = c.getContext('2d');
+		return ctx ? (ctx.drawImage(camera, 0, 0), c.toDataURL('image/png')) : null;
+	};
 
-		const canvas = document.createElement('canvas');
-		canvas.width = camera.videoWidth;
-		canvas.height = camera.videoHeight;
-
-		const ctx = canvas.getContext('2d');
-		if (!ctx) return null; // If we can't get 2D context, fail safely
-
-		ctx.drawImage(camera, 0, 0, canvas.width, canvas.height);
-		return canvas.toDataURL('image/png'); // 📸 Capture the image as base64
-	}
-
-	onMount(() => {
-		if (typeof window == 'undefined') return false;
-		window.addEventListener('keydown', scannerListen);
-		startCamera();
-	});
-
-	onDestroy(() => {
-		if (typeof window == 'undefined') return false;
-		window.removeEventListener('keydown', scannerListen);
-		stopCamera();
-	});
+	onMount(startCamera);
+	onDestroy(stopCamera);
 </script>
 
-<svelte:head>
-	<title>Home</title>
-	<meta name="description" content="Svelte demo app" />
-</svelte:head>
+<section class="flex flex-col items-center gap-4 p-4">
+	<!-- svelte-ignore a11y_media_has_caption -->
+	<!-- svelte-ignore element_invalid_self_closing_tag -->
+	<video bind:this={camera} autoplay playsinline class="rounded shadow" />
 
-<section>
-  	<div id="log"></div>
- 	<!-- svelte-ignore a11y_media_has_caption -->
-	<div id="scan-bar">
-		<span id="scan">Waiting for scan: {buffer}</span>
-		<video id="camera" autoplay playsinline></video>
-	</div>
-	 {#if hist.length}
-	 <div class="gallery">
-	   {#each [...hist].reverse() as item, i}
-		 <div class="image-card">
-			<span id="code">{item.scan}</span>
-		   <img src={item.image} alt="Captured image {i + 1}" />
-		 </div>
-	   {/each}
-	 </div>
-   {/if}
-   
+	{#if hist.length}
+		<div class="w-full flex flex-col gap-2">
+			{#each [...hist].reverse() as { scan, image }, i}
+				<div class="flex items-center justify-between gap-4 p-4 bg-cyan-600 text-lg rounded shadow">
+					<!-- 🗑 Trash icon on the left -->
+					<button class="text-white hover:text-red-400 transition" aria-label="Delete scan {i + 1}">
+						<svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+						</svg>
+					</button>
+
+					<!-- Scan text -->
+					<span class="flex-1 text-white truncate">{scan}</span>
+
+					<!-- Images on the right -->
+					<div class="flex gap-1">
+						<img src={image} alt="Capture {i + 1}" class="h-24 rounded" />
+						<img src={image} alt="Capture {i + 1}" class="h-24 rounded" />
+					</div>
+
+					<!-- Checkmark icon -->
+					<button aria-label="Confirm scan {i + 1}" class="hover:text-lime-400 transition">
+						<svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+						</svg>
+					</button>
+				</div>
+			{/each}
+		</div>
+	{/if}
 </section>
 
-<style>
-	section {
-		display: flex;
-		flex-direction: column;
-		justify-content: top;
-		align-items: center;
-		flex: 0.6;
-	}
-	#camera {
-		height: 50px;
-		margin: 10px;
-		border-radius: 10px;
-	}
-	#scan-bar {
-		display: flex;
-		flex-direction: row;
-		justify-content: space-between;
-		align-items: center;
-		width: 100%;
-		outline: 1px solid grey;
-		border-radius: 20px;
-		background-color: white;
-		opacity: 0.7;
-	}
-	#scan {
-		font-size: 25pt;
-		margin: 10px 20px;
-	}
-	.gallery {
-		padding : 10px;
-		width: 100%;
-		display: flex;
-		flex-direction: column;
-		justify-content: top;
-		align-items: center;
-	}
-	.image-card {
-		width: 100%;
-		display: flex;
-		flex-direction: row;
-		justify-content: space-between;
-		align-items: center;
-		font-size: x-large;
-		margin: 10px;
-		padding: 10px;
-		background-color: rgb(220, 255, 221);
-	}
-	.image-card img {
-		height: 100px;
-	}
-</style>
