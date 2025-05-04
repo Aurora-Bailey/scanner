@@ -12,6 +12,7 @@
 	let select = 0;
 	let buffer = ''; // scanner input
 	let capturing = false; // scanner
+	scanner.set('');
 
 	let actions = [
 		// Type: 'code'
