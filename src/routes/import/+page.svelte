@@ -7,8 +7,8 @@
 		stream: MediaStream | null,
 		videoEl: HTMLVideoElement | null,
 		active: boolean,
-		rotation: 0,
-		landscape: true
+		rotation: number,
+		landscape: boolean
 	}[] = [];
 	let hist: { scan: string, image: string[] }[] = [];
 	let devices: MediaDeviceInfo[] = [];
@@ -36,7 +36,6 @@
 			[w, h] = [h, w]; // cleaner swap
 		}
 
-		console.log(w, h)
 		cameraObj.stream = await navigator.mediaDevices.getUserMedia({
 			video: {
 				deviceId: { exact: cameraObj.device.deviceId },
@@ -47,21 +46,21 @@
 		});
 		cameraObj.active = true;
 		cameras = [...cameras]; // trigger Svelte reactivity
-		await tick()
+		await tick();
 		if (cameraObj.videoEl) cameraObj.videoEl.srcObject = cameraObj.stream;
 	};
 
-	const toggleCamera = (cameraObj: any) => {
+	const toggleCamera = async (cameraObj: any) => {
 		if (cameraObj.landscape && cameraObj.active) {
 			stopCamera(cameraObj);
 			cameraObj.landscape = false;
-			tick();
-			startCamera(cameraObj);
+			await tick();
+			await startCamera(cameraObj);
 		} else if (cameraObj.active) {
 			stopCamera(cameraObj)
 			cameraObj.landscape = true;
 		 } else {
-			startCamera(cameraObj);
+			await startCamera(cameraObj);
 		 }
 		
 		cameras = [...cameras]; // triggers reactive update
@@ -74,14 +73,6 @@
 		if (cameraObj.videoEl) cameraObj.videoEl.srcObject = null;
 	};
 
-	// const captureImage = (video: HTMLVideoElement | null) => {
-	// 	if (!video) return null;
-	// 	const c = document.createElement('canvas');
-	// 	c.width = video.videoWidth;
-	// 	c.height = video.videoHeight;
-	// 	const ctx = c.getContext('2d');
-	// 	return ctx ? (ctx.drawImage(video, 0, 0), c.toDataURL('image/png')) : null;
-	// };
 	const captureImage = (video: HTMLVideoElement | null, rotation: number = 0) => {
 		if (!video) return null;
 
@@ -112,7 +103,6 @@
 		return c.toDataURL('image/png');
 	};
 
-	// onMount(startCamera);
 	onMount(async () => {
 		await navigator.mediaDevices.getUserMedia({ video: true }); // Trigger permissions
 		const allDevices = await navigator.mediaDevices.enumerateDevices();
