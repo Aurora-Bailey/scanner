@@ -1,1 +1,0 @@
-import{t as o,a as r}from"../chunks/DCMgdChi.js";import"../chunks/LlGLij-K.js";const a=!0,c=Object.freeze(Object.defineProperty({__proto__:null,prerender:a},Symbol.toStringTag,{value:"Module"}));var n=o('<section class="flex flex-col items-center gap-4 p-4"></section>');function l(e){var t=n();r(e,t)}export{l as component,c as universal};
