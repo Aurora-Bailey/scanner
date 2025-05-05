@@ -2,26 +2,17 @@
 	import { onMount, onDestroy, tick } from 'svelte';
 	import { scanner } from '$lib/stores/scanner';
 
-	let stream: MediaStream | null = null;
-	let camera: HTMLVideoElement;
 	let cameras: {
 		device: MediaDeviceInfo,
 		stream: MediaStream | null,
 		videoEl: HTMLVideoElement | null,
 		active: boolean,
-		rotation: 90,
+		rotation: 0,
 		landscape: true
 	}[] = [];
 	let hist: { scan: string, image: string[] }[] = [];
 	let devices: MediaDeviceInfo[] = [];
-	let selectedDeviceId: string | null = null
 
-	// $: if ($scanner) {
-	// 	hist = [...hist, ...cameras.filter(c => c.active).map(c => ({
-	// 		scan: $scanner,
-	// 		image: captureImage(c.videoEl)
-	// 	}))];
-	// }
 	$: if ($scanner) {
 		const images = cameras
 			.filter(c => c.active && c.videoEl)
@@ -126,7 +117,7 @@
 		await navigator.mediaDevices.getUserMedia({ video: true }); // Trigger permissions
 		const allDevices = await navigator.mediaDevices.enumerateDevices();
 		devices = allDevices.filter(d => d.kind === 'videoinput');
-		cameras = devices.map(d => ({ device: d, stream: null, videoEl: null, active: false, rotation: 90, landscape: true }));
+		cameras = devices.map(d => ({ device: d, stream: null, videoEl: null, active: false, rotation: 0, landscape: true }));
 	});
 	onDestroy(() => {
 		cameras.forEach(c => stopCamera(c));
