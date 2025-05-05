@@ -8,22 +8,44 @@
 		device: MediaDeviceInfo,
 		stream: MediaStream | null,
 		videoEl: HTMLVideoElement | null,
-		active: boolean
+		active: boolean,
+		rotation: 90,
+		landscape: true
 	}[] = [];
-	let hist: { scan: string, image: string | null }[] = [];
+	let hist: { scan: string, image: string[] }[] = [];
 	let devices: MediaDeviceInfo[] = [];
 	let selectedDeviceId: string | null = null
 
+	// $: if ($scanner) {
+	// 	hist = [...hist, ...cameras.filter(c => c.active).map(c => ({
+	// 		scan: $scanner,
+	// 		image: captureImage(c.videoEl)
+	// 	}))];
+	// }
 	$: if ($scanner) {
-		hist = [...hist, ...cameras.filter(c => c.active).map(c => ({
-			scan: $scanner,
-			image: captureImage(c.videoEl)
-		}))];
+		const images = cameras
+			.filter(c => c.active && c.videoEl)
+			.map(c => captureImage(c.videoEl, c.rotation))
+			.filter((img): img is string => !!img);
+
+		hist = [...hist, { scan: $scanner, image: images }];
 	}
 
-	const startCamera = async (cameraObj: { device: MediaDeviceInfo; stream: any; videoEl: any; active: any; }, w = 3840, h = 2160) => {
+
+	const rotateCamera = (cameraObj: { rotation: number; }) => {
+		cameraObj.rotation = (cameraObj.rotation + 90) % 360;
+		cameras = [...cameras]; // Trigger reactivity
+	};
+
+	const startCamera = async (cameraObj: { device: MediaDeviceInfo; stream: any; videoEl: any; active: any; landscape: any; }, w = 3840, h = 2160) => {
 		if (cameraObj.active) return;
 
+		// Swap width and height if in portrait mode
+		if (!cameraObj.landscape) {
+			[w, h] = [h, w]; // cleaner swap
+		}
+
+		console.log(w, h)
 		cameraObj.stream = await navigator.mediaDevices.getUserMedia({
 			video: {
 				deviceId: { exact: cameraObj.device.deviceId },
@@ -39,7 +61,18 @@
 	};
 
 	const toggleCamera = (cameraObj: any) => {
-		cameraObj.active ? stopCamera(cameraObj) : startCamera(cameraObj);
+		if (cameraObj.landscape && cameraObj.active) {
+			stopCamera(cameraObj);
+			cameraObj.landscape = false;
+			tick();
+			startCamera(cameraObj);
+		} else if (cameraObj.active) {
+			stopCamera(cameraObj)
+			cameraObj.landscape = true;
+		 } else {
+			startCamera(cameraObj);
+		 }
+		
 		cameras = [...cameras]; // triggers reactive update
 	};
 
@@ -50,13 +83,42 @@
 		if (cameraObj.videoEl) cameraObj.videoEl.srcObject = null;
 	};
 
-	const captureImage = (video: HTMLVideoElement | null) => {
+	// const captureImage = (video: HTMLVideoElement | null) => {
+	// 	if (!video) return null;
+	// 	const c = document.createElement('canvas');
+	// 	c.width = video.videoWidth;
+	// 	c.height = video.videoHeight;
+	// 	const ctx = c.getContext('2d');
+	// 	return ctx ? (ctx.drawImage(video, 0, 0), c.toDataURL('image/png')) : null;
+	// };
+	const captureImage = (video: HTMLVideoElement | null, rotation: number = 0) => {
 		if (!video) return null;
+
+		const width = video.videoWidth;
+		const height = video.videoHeight;
+
 		const c = document.createElement('canvas');
-		c.width = video.videoWidth;
-		c.height = video.videoHeight;
 		const ctx = c.getContext('2d');
-		return ctx ? (ctx.drawImage(video, 0, 0), c.toDataURL('image/png')) : null;
+
+		// Adjust canvas size based on rotation
+		if (rotation % 180 === 0) {
+			c.width = width;
+			c.height = height;
+		} else {
+			c.width = height;
+			c.height = width;
+		}
+
+		if (!ctx) return null;
+
+		// Apply rotation and draw the image
+		ctx.save();
+		ctx.translate(c.width / 2, c.height / 2);
+		ctx.rotate((rotation * Math.PI) / 180);
+		ctx.drawImage(video, -width / 2, -height / 2);
+		ctx.restore();
+
+		return c.toDataURL('image/png');
 	};
 
 	// onMount(startCamera);
@@ -64,7 +126,7 @@
 		await navigator.mediaDevices.getUserMedia({ video: true }); // Trigger permissions
 		const allDevices = await navigator.mediaDevices.enumerateDevices();
 		devices = allDevices.filter(d => d.kind === 'videoinput');
-		cameras = devices.map(d => ({ device: d, stream: null, videoEl: null, active: false }));
+		cameras = devices.map(d => ({ device: d, stream: null, videoEl: null, active: false, rotation: 90, landscape: true }));
 	});
 	onDestroy(() => {
 		cameras.forEach(c => stopCamera(c));
@@ -89,17 +151,23 @@
 	</div>
 
 	<!-- Video Feeds -->
-	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+	<div class="flex items-center justify-between gap-4 p-4 text-lg rounded shadow">
 		{#each cameras as cam}
 			{#if cam.active}
-				<!-- svelte-ignore a11y_media_has_caption -->
-				<!-- svelte-ignore element_invalid_self_closing_tag -->
-				<video
-					bind:this={cam.videoEl}
-					autoplay
-					playsinline
-					class="rounded shadow max-w-full"
-				/>
+				<div>
+					<!-- svelte-ignore a11y_media_has_caption -->
+					<!-- svelte-ignore element_invalid_self_closing_tag -->
+					<video
+						bind:this={cam.videoEl}
+						autoplay
+						playsinline
+						on:click={() => rotateCamera(cam)}
+						class="rounded shadow transition-transform duration-300 cursor-pointer"
+						style="transform: rotate({cam.rotation}deg);"
+					/>
+
+				</div>
+				
 			{/if}
 		{/each}
 	</div>
@@ -118,7 +186,9 @@
 					<span class="flex-1 text-white truncate">{scan}</span>
 
 					<div class="flex gap-1">
-						<img src={image} alt="Capture {i + 1}" class="h-24 rounded" />
+						{#each image as im}
+							<img src={im} alt="Capture {i + 1}" class="h-24 rounded" />
+						{/each}
 					</div>
 
 					<button aria-label="Confirm scan {i + 1}" class="hover:text-lime-400 transition">
