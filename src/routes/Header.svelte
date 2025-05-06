@@ -33,7 +33,7 @@
 		{ name: 'Cherry', type: 'link', fav: false, ref:'/cherry', keywords: ['cherry', 'fruit', 'red', 'pit', 'tree'] },
 		{ name: 'Date', type: 'link', fav: false, ref:'/date', keywords: ['date', 'fruit', 'sweet', 'desert', 'palm'] },
 		{ name: 'Elderberry', type: 'link', fav: false, ref:'/elderberry', keywords: ['elderberry', 'fruit', 'purple', 'immune', 'berry'] },
-		{ name: 'Fig', type: 'link', fav: false, ref:'/fig', keywords: ['fig', 'fruit', 'tree', 'sweet', 'seeds'] },
+		{ name: 'QR', type: 'link', fav: true, ref:'/qr', keywords: ['qr', 'fruit', 'tree', 'sweet', 'seeds'] },
 		{ name: 'Sverdle', type: 'link', fav: true, ref:'/sverdle', keywords: ['grape', 'fruit', 'vine', 'stem', 'purple'] },
 		{ name: 'Home', type: 'link', fav: true, ref:'/', keywords: ['home', 'back', 'exit', 'reset', 'other'] },
 		{ name: 'Import', type: 'link', fav: true, ref:'/import', keywords: ['add', 'import', 'scan', 'camera', 'idk'] },
