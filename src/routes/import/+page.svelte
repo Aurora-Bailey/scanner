@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, onDestroy, tick } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { scanner } from '$lib/stores/scanner';
 
 	let cameras: {
@@ -10,16 +10,15 @@
 		rotation: number,
 		landscape: boolean
 	}[] = [];
-	let hist: { scan: string, image: string[] }[] = [];
+	let hist: { scan: string, image: (string|null)[] }[] = [];
 	let devices: MediaDeviceInfo[] = [];
 
 	$: if ($scanner) {
 		const images = cameras
 			.filter(c => c.active && c.videoEl)
-			.map(c => captureImage(c.videoEl, c.rotation))
-			.filter((img): img is string => !!img);
+			.map(c => captureImage(c.videoEl, c.rotation));
 
-		hist = [...hist, { scan: $scanner, image: images }];
+		hist = [...hist, { scan: $scanner, image: [...images] }];
 	}
 
 
@@ -28,7 +27,7 @@
 		cameras = [...cameras]; // Trigger reactivity
 	};
 
-	const startCamera = async (cameraObj: { device: MediaDeviceInfo; stream: any; videoEl: any; active: any; landscape: any; }, w = 3840, h = 2160) => {
+	const startCamera = async (cameraObj: { device: MediaDeviceInfo; stream: any; videoEl: any; active: any; rotation: any; landscape: any; }, w = 3840, h = 2160) => {
 		if (cameraObj.active) return;
 
 		// Swap width and height if in portrait mode
@@ -43,26 +42,16 @@
 				height: { ideal: h }
 			},
 			audio: false
-		});
+		})
 		cameraObj.active = true;
 		cameras = [...cameras]; // trigger Svelte reactivity
-		await tick();
-		if (cameraObj.videoEl) cameraObj.videoEl.srcObject = cameraObj.stream;
+		setTimeout(() => {
+			if (cameraObj.videoEl) cameraObj.videoEl.srcObject = cameraObj.stream;
+		},10);
 	};
 
 	const toggleCamera = async (cameraObj: any) => {
-		if (cameraObj.landscape && cameraObj.active) {
-			stopCamera(cameraObj);
-			cameraObj.landscape = false;
-			await tick();
-			await startCamera(cameraObj);
-		} else if (cameraObj.active) {
-			stopCamera(cameraObj)
-			cameraObj.landscape = true;
-		 } else {
-			await startCamera(cameraObj);
-		 }
-		
+		cameraObj.active ? stopCamera(cameraObj) : startCamera(cameraObj);
 		cameras = [...cameras]; // triggers reactive update
 	};
 
@@ -115,7 +104,6 @@
 </script>
 
 <section class="flex flex-col items-center gap-4 p-4">
-
 	<!-- Toggle Buttons -->
 	<div class="flex flex-wrap justify-center gap-2">
 		{#each cameras as cam}
