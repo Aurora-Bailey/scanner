@@ -8,7 +8,7 @@
 </svelte:head>
 
 <section class="flex flex-col items-center justify-center p-10">
-	<h1>Hello World!</h1>
+	<h1>✨ The future is neon ✨</h1>
 	<h2>press escape...</h2>
 	<p>{$scanner}</p>
 </section>
