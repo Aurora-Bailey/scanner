@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { onMount, tick } from 'svelte';
 	import { browser } from '$app/environment';
-	import { scanner } from '$lib/stores/scanner';
+	import { scanner, scancount } from '$lib/stores/scanner';
 
 	let version = "V1.02 - 043025";
 	let open = false;
@@ -83,6 +83,7 @@
 			// Capture with bluetooth scanner
 			if (capturing && k === 'Enter') {
 				scanner.set(buffer);
+				scancount.update(n => n + 1);
 				capturing = false;
 				buffer = '';
 				return;
@@ -160,7 +161,7 @@
 			<span class="w-6 h-0.5 bg-cyan-400 transition-all duration-300" class:-rotate-45={hamburger} class:-translate-y-1.5={hamburger}></span>
 		</button>
 	</div>
-	<div class="flex items-center justify-center">Version: {version}</div>
+	<div class="flex items-center justify-center">Version: {version} Scan: {$scanner} Count: {$scancount}</div>
 </header>
 
 <!-- Floating Action Button (FAB) -->

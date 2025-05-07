@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { scanner } from '$lib/stores/scanner';
+	import { scanner, scancount } from '$lib/stores/scanner';
+	import { fly, fade } from 'svelte/transition';
+	import { toDataURL } from 'qrcode';
+
 
 	let cameras: {
 		device: MediaDeviceInfo,
@@ -10,16 +13,50 @@
 		rotation: number,
 		landscape: boolean
 	}[] = [];
-	let hist: { scan: string, image: (string|null)[] }[] = [];
+	let hist: { scan: string, c: number, confirmed: string, image: (string|null)[] }[] = [];
 	let devices: MediaDeviceInfo[] = [];
+	
+	let last = 0;
+	$: if ($scancount !== last) {
+		last = $scancount;
+		scanEvent()
+	}
 
-	$: if ($scanner) {
-		const images = cameras
+	const scanEvent = async () => {
+		let images = cameras
 			.filter(c => c.active && c.videoEl)
 			.map(c => captureImage(c.videoEl, c.rotation));
 
-		hist = [...hist, { scan: $scanner, image: [...images] }];
-	}
+		const newEntry = { scan: $scanner, c: $scancount, confirmed: 'no', image: [...images] };
+		hist = [...hist, newEntry];
+
+		// Delay confirmation and background update
+		setTimeout(async () => {
+			const coin = Math.random() > 0.1;
+			if (coin) {
+				newEntry.confirmed = 'yes';
+				hist = [...hist];
+				setTimeout(() => {
+					hist = hist.filter(entry => entry.c !== newEntry.c);
+				}, 6000);
+			} else {
+				const qr = await toDataURL($scanner, {
+					errorCorrectionLevel: 'L',
+					margin: 2,
+					scale: 8,
+					color: {
+						dark: '#000000',
+						light: '#ffffff',
+					}
+				});
+				newEntry.image.push(qr);
+				newEntry.confirmed = 'error';
+				hist = [...hist];
+			}
+		}, 3000);
+	};
+
+
 
 
 	const rotateCamera = (cameraObj: { rotation: number; }) => {
@@ -93,6 +130,7 @@
 	};
 
 	onMount(async () => {
+		hist=[];
 		await navigator.mediaDevices.getUserMedia({ video: true }); // Trigger permissions
 		const allDevices = await navigator.mediaDevices.enumerateDevices();
 		devices = allDevices.filter(d => d.kind === 'videoinput');
@@ -144,27 +182,23 @@
 	<!-- Scan History -->
 	{#if hist.length}
 		<div class="w-full flex flex-col gap-2 mt-6">
-			{#each [...hist].reverse() as { scan, image }, i}
-				<div class="flex items-center justify-between gap-4 p-4 bg-cyan-600 text-lg rounded shadow">
-					<button class="text-white hover:text-red-400 transition" aria-label="Delete scan {i + 1}">
-						<svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-						</svg>
-					</button>
+			{#each [...hist].reverse() as { scan, image, confirmed }, i}
+			<div
+				class="flex items-center opacity-70 justify-between gap-4 text-lg overflow-hidden overflow-x-scroll rounded-md"
+				class:bg-emerald-300={confirmed == 'yes'}
+				class:bg-cyan-600={confirmed == 'no'}
+				class:bg-rose-400={confirmed == 'error'}
+			>
 
-					<span class="flex-1 text-white truncate">{scan}</span>
-
-					<div class="flex gap-1">
-						{#each image as im}
-							<img src={im} alt="Capture {i + 1}" class="h-24 rounded" />
-						{/each}
+							<!-- Scan overlay -->
+					<div class="bg-cyan-900 bg-opacity-80 text-white text-sm px-4 py-1 overflow-scroll h-48 rounded-br z-10">
+						{@html scan.split('').join('<br>')}
 					</div>
 
-					<button aria-label="Confirm scan {i + 1}" class="hover:text-lime-400 transition">
-						<svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-						</svg>
-					</button>
+					<!-- Images underneath -->
+					{#each image as im}
+						<img src={im} alt="Capture {i + 1}" class="h-48 p-1 rounded" />
+					{/each}
 				</div>
 			{/each}
 		</div>
