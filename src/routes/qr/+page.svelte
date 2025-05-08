@@ -53,7 +53,7 @@
 		items = [];
 		for (let i = 0; i < count; i++) {
             let n = start + (unique ? i : 0);
-			const letter = String.fromCharCode((n % 25) + 65);
+			const letter = String.fromCharCode((n % 26) + 65);
 			const prefix = unique ? "H-" : "H+";
 			items.push(`${prefix}${n}-${letter}`);
 		}
@@ -122,9 +122,9 @@
 	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP&display=swap" rel="stylesheet" />
 </svelte:head>
 
-<section class="text-black print:p-0 p-4">
+<section class="text-black bg-white print:p-0 p-4">
 	<!-- Controls -->
-	<div class="print:hidden text-white flex flex-col gap-2 sm:flex-row sm:items-end mb-4">
+	<div class="print:hidden text-black flex flex-col gap-2 sm:flex-row sm:items-end mb-4">
 		<div class="flex flex-col">
 			<!-- svelte-ignore a11y_label_has_associated_control -->
 			<label class="text-sm font-medium">Start</label>
@@ -152,7 +152,7 @@
 	</div>
 
 	<!-- Rendered Labels -->
-	<div class="flex flex-col mt-4 gap-2 items-center">
+	<div class="flex flex-col mt-4 gap-2 items-left">
 		{#each labels as { dataUrl }, i}
 			<img src={dataUrl} alt="Label {i}" class="w-[240px] h-[80px]" />
 		{/each}
