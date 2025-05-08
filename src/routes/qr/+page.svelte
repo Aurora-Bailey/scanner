@@ -1,62 +1,161 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { toDataURL } from 'qrcode';
+	import JsBarcode from 'jsbarcode';
+	import { jsPDF } from 'jspdf';
+    import { browser } from '$app/environment';
 
-	let strings: string[] = [
-		'https://aurora-bailey.github.io/scanner',
-		'hello-world',
-		'hwab://item/123',
-		'https://github.com/Aurora-Bailey'
-	];
+    $: if (browser && start >= 0 && count > 0 && typeof unique !== 'undefined') {
+        generateLabels();
+    }
 
-	let qrcodes: { text: string; dataUrl: string }[] = [];
 
-	const options = {
-		errorCorrectionLevel: 'H',
-		margin: 2,
-		scale: 8,
+	// 🔗 Base URL for QR codes
+	const qrPrepend = "https://hwab.com/i/";
+
+	// 🔣 Inputs
+	let start = 1000;
+	let count = 10;
+	let unique = true;
+
+	// 🧾 Final image data
+	let items: string[] = [];
+	let labels: { text: string; dataUrl: string }[] = [];
+
+	const qrOptions = {
+		errorCorrectionLevel: 'L' as const,
+		margin: 0,
+		scale: 4,
 		color: {
-			dark: '#00ffff',         // Cyan
-			light: '#0f172a'         // Tailwind slate-900 (dark blue-black)
+			dark: '#000000',
+			light: '#ffffff'
 		}
 	};
 
-	onMount(() => {
-		generateQRCodes();
-	});
+	// 🖨️ Generate PDF
+	function exportToPDF() {
+		const pdf = new jsPDF({
+			orientation: 'portrait',
+			unit: 'pt',
+			format: [300, labels.length * 90]
+		});
 
-	async function generateQRCodes() {
-		qrcodes = await Promise.all(
-			strings.map(async (text) => {
-                // @ts-ignore
-				const dataUrl = await toDataURL(text, options);
-				return { text, dataUrl };
+		labels.forEach(({ dataUrl }, i) => {
+			const y = i * 90;
+			pdf.addImage(dataUrl, 'PNG', 30, y + 10, 240, 80);
+		});
+
+		pdf.save('labels.pdf');
+	}
+
+	// 🛠️ Generate item IDs and render them
+	async function generateLabels() {
+		items = [];
+		for (let i = 0; i < count; i++) {
+            let n = start + (unique ? i : 0);
+			const letter = String.fromCharCode((n % 25) + 65);
+			const prefix = unique ? "H-" : "H+";
+			items.push(`${prefix}${n}-${letter}`);
+		}
+
+		labels = await Promise.all(
+			items.map(async (text) => {
+				const barcodeCanvas = document.createElement('canvas');
+				JsBarcode(barcodeCanvas, text, {
+					format: 'CODE39',
+					width: 1.5,
+					height: 40,
+					displayValue: false,
+					margin: 0,
+					background: '#ffffff',
+					lineColor: '#000000'
+				});
+
+				const qrDataUrl = await toDataURL(qrPrepend + text, qrOptions);
+				const qrImg = new Image();
+				qrImg.src = qrDataUrl;
+				await qrImg.decode();
+
+				const scale = 4;
+				const canvasWidth = 240 * scale;
+				const canvasHeight = 80 * scale;
+
+				const finalCanvas = document.createElement('canvas');
+				finalCanvas.width = canvasWidth;
+				finalCanvas.height = canvasHeight;
+
+				const ctx = finalCanvas.getContext('2d')!;
+				ctx.scale(scale, scale);
+				ctx.fillStyle = '#ffffff';
+				ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+				// Barcode
+				ctx.drawImage(barcodeCanvas, 5, 5, 110, 40);
+				ctx.font = '12px "Noto Serif JP", serif';
+				ctx.fillStyle = '#000';
+				ctx.textAlign = 'center';
+				ctx.fillText(text, 60, 60);
+
+				// QR Code
+				ctx.drawImage(qrImg, 145, 2, 70, 70);
+
+				// Vertical text (kanji-style)
+				ctx.save();
+				ctx.translate(225, 10);
+				ctx.rotate(Math.PI / 2);
+				ctx.textAlign = 'left';
+				ctx.fillText(text, 0, 0);
+				ctx.restore();
+
+				return { text, dataUrl: finalCanvas.toDataURL() };
 			})
 		);
 	}
+
+	// ⚡ Auto-generate on mount (or call manually)
+	onMount(() => {
+		generateLabels();
+	});
 </script>
 
-<style>
-</style>
+<svelte:head>
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP&display=swap" rel="stylesheet" />
+</svelte:head>
 
-<section class="min-h-screen w-full px-6 py-12 text-white">
-	<h1 class="text-3xl font-bold text-cyan-400 text-center mb-10 drop-shadow-lg">
-		✨ QR Generator
-	</h1>
+<section class="text-black print:p-0 p-4">
+	<!-- Controls -->
+	<div class="print:hidden text-white flex flex-col gap-2 sm:flex-row sm:items-end mb-4">
+		<div class="flex flex-col">
+			<!-- svelte-ignore a11y_label_has_associated_control -->
+			<label class="text-sm font-medium">Start</label>
+			<input type="number" bind:value={start} class="border p-1 rounded" />
+		</div>
 
-	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-		{#each qrcodes as { text, dataUrl }, i}
-			<div class="bg-slate-800 rounded-2xl shadow-lg p-4 flex flex-col items-center hover:scale-[1.02] transition-transform">
-				<img src={dataUrl} alt="QR for {text}" class="w-48 h-48 object-contain mb-4 border-2 border-cyan-400 rounded" />
-				<code class="text-xs text-cyan-200 break-all text-center mb-2">{text}</code>
-				<a
-					href={dataUrl}
-					download={`qr-${i + 1}.png`}
-					class="text-sm px-3 py-1 bg-cyan-600 hover:bg-cyan-500 rounded text-black font-semibold shadow"
-				>
-					⬇ Download
-				</a>
-			</div>
+		<div class="flex flex-col">
+			<!-- svelte-ignore a11y_label_has_associated_control -->
+			<label class="text-sm font-medium">Count</label>
+			<input type="number" bind:value={count} class="border p-1 rounded" />
+		</div>
+
+		<div class="flex flex-col">
+			<!-- svelte-ignore a11y_label_has_associated_control -->
+			<label class="text-sm font-medium">Unique</label>
+			<input type="checkbox" bind:checked={unique} class="h-5 w-5" />
+		</div>
+
+        <button on:click={() => window.print()} class="bg-black text-white px-4 py-2 rounded shadow">
+            📄 Print
+        </button>
+		<button on:click={exportToPDF} class="bg-black text-white px-4 py-2 rounded shadow">
+			💾 PDF
+		</button>
+	</div>
+
+	<!-- Rendered Labels -->
+	<div class="flex flex-col mt-4 gap-2 items-center">
+		{#each labels as { dataUrl }, i}
+			<img src={dataUrl} alt="Label {i}" class="w-[240px] h-[80px]" />
 		{/each}
 	</div>
 </section>
+
