@@ -15,7 +15,7 @@
 
 	// 🔣 Inputs
 	let start = 1000;
-	let count = 10;
+	let count = 50;
 	let unique = true;
 
 	// 🧾 Final image data
@@ -122,9 +122,9 @@
 	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP&display=swap" rel="stylesheet" />
 </svelte:head>
 
-<section class="text-black bg-white print:p-0 p-4">
+<section class="text-white print:p-0 p-4 print:absolute top-0 bottom-0 right-0 left-0 print:scroll-auto">
 	<!-- Controls -->
-	<div class="print:hidden text-black flex flex-col gap-2 sm:flex-row sm:items-end mb-4">
+	<div class="print:hidden text-white flex flex-row gap-2 sm:flex-row sm:items-end mb-4">
 		<div class="flex flex-col">
 			<!-- svelte-ignore a11y_label_has_associated_control -->
 			<label class="text-sm font-medium">Start</label>
@@ -152,9 +152,9 @@
 	</div>
 
 	<!-- Rendered Labels -->
-	<div class="flex flex-col mt-4 gap-2 items-left">
+	<div class="grid text-black grid-cols-5 w-[2550px] h-[3300px] grid-rows-10 gap-0">
 		{#each labels as { dataUrl }, i}
-			<img src={dataUrl} alt="Label {i}" class="w-[240px] h-[80px]" />
+			<img src={dataUrl} alt="Label {i}" class="w-[100%] h-[100%]" style="" />
 		{/each}
 	</div>
 </section>
